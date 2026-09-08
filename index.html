@@ -2,12 +2,106 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>trailhead-turtle-tmp</title>
+    <title>Trailhead — turtle graphics field notebook</title>
+    <meta
+      name="description"
+      content="A turtle-graphics language with procedures, REPEAT loops, variables, and arithmetic, interpreted step by step onto a canvas with an animated turtle and a trail you can export as SVG."
+    />
+    <meta property="og:title" content="Trailhead — turtle graphics field notebook" />
+    <meta
+      property="og:description"
+      content="Write REPEAT 36 [ REPEAT 4 [ FD 100 RT 90 ] RT 10 ], watch the turtle draw it line by line, then export the trail as SVG."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#1f4d3a" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231f4d3a'/%3E%3Cellipse cx='16' cy='17' rx='8' ry='9' fill='%239ad8a6' stroke='%23163126' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='6.5' r='3.5' fill='%237cc48f' stroke='%23163126' stroke-width='1.5'/%3E%3Cellipse cx='16' cy='17' rx='3.5' ry='4' fill='none' stroke='%23163126' stroke-width='1.2'/%3E%3C/svg%3E"
+    />
   </head>
   <body>
-    <div id="app"></div>
+    <div class="app">
+      <aside class="notebook">
+        <header class="notebook__head">
+          <h1 class="title">Trailhead</h1>
+          <p class="tagline">A turtle-graphics field notebook. Write a program, watch the trail appear.</p>
+        </header>
+
+        <nav class="gallery" aria-label="Example programs">
+          <span class="gallery__label">Examples</span>
+          <div class="gallery__chips" id="gallery"></div>
+        </nav>
+
+        <section class="editor" id="editor" aria-label="Program editor">
+          <pre class="editor__backdrop" aria-hidden="true"></pre>
+          <textarea
+            class="editor__input"
+            id="source"
+            spellcheck="false"
+            wrap="off"
+            autocapitalize="off"
+            autocomplete="off"
+            aria-label="Turtle program"
+            aria-describedby="message"
+            placeholder="; Write a program, or pick an example above&#10;REPEAT 36 [&#10;  REPEAT 4 [ FD 100 RT 90 ]&#10;  RT 10&#10;]"
+          ></textarea>
+        </section>
+
+        <p class="message" id="message" role="status" aria-live="polite"></p>
+
+        <div class="controls">
+          <div class="controls__row">
+            <button class="btn btn--primary" id="run" type="button" title="Run (Ctrl+Enter)">
+              <span class="btn__icon" aria-hidden="true">&#9654;</span> Run
+            </button>
+            <button class="btn" id="step" type="button" title="Execute one command">Step</button>
+            <button class="btn" id="stop" type="button" title="Pause (Esc)">Pause</button>
+            <button class="btn" id="reset" type="button" title="Clear the canvas">Reset</button>
+          </div>
+          <label class="speed" for="speed">
+            <span class="speed__label">Speed</span>
+            <input class="speed__input" id="speed" type="range" min="1" max="10" value="7" />
+            <span class="speed__value" id="speed-value">7</span>
+          </label>
+        </div>
+
+        <details class="reference">
+          <summary>Language reference</summary>
+          <dl class="reference__list">
+            <dt>FD n · BK n</dt><dd>move forward / back</dd>
+            <dt>RT a · LT a</dt><dd>turn right / left (degrees)</dd>
+            <dt>PU · PD</dt><dd>pen up / down</dd>
+            <dt>HOME · CLEAR</dt><dd>return to centre · wipe the trail</dd>
+            <dt>SETXY x y · SETHEADING a</dt><dd>jump / face a direction</dd>
+            <dt>SETCOLOR c</dt><dd>palette 0–15 or "coral, "#ff8800</dd>
+            <dt>SETWIDTH w</dt><dd>pen width</dd>
+            <dt>REPEAT n [ … ]</dt><dd>loop; REPCOUNT is the iteration</dd>
+            <dt>IF cond [ … ]</dt><dd>with &lt; &gt; = &lt;= &gt;= &lt;&gt;</dd>
+            <dt>TO name :a :b … END</dt><dd>define a procedure; STOP exits</dd>
+            <dt>MAKE "x expr</dt><dd>set a variable, read it as :x</dd>
+            <dt>+ - * / ( )</dt><dd>RANDOM n · SIN a · COS a · SQRT n · ROUND n</dd>
+            <dt>; comment</dt><dd>to the end of the line</dd>
+          </dl>
+        </details>
+      </aside>
+
+      <main class="stage">
+        <canvas class="stage__canvas" id="canvas" tabindex="0" aria-label="Turtle canvas. Drag to pan, scroll to zoom, arrow keys pan, plus and minus zoom, F fits the drawing."></canvas>
+        <div class="stage__toolbar" role="toolbar" aria-label="Canvas tools">
+          <button class="tool" id="fit" type="button" title="Fit drawing (F)">Fit</button>
+          <button class="tool" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
+          <button class="tool" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
+          <span class="tool tool--readout" id="zoom" aria-live="off">100%</span>
+          <button class="tool tool--accent" id="export" type="button" title="Download the trail as an SVG file">Export SVG</button>
+        </div>
+        <p class="stage__status" id="status"></p>
+        <div class="stage__empty" id="empty">
+          <p class="stage__empty-title">The trail starts here.</p>
+          <p>Pick an example or write a program, then press <kbd>Run</kbd> (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>).</p>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -73,6 +73,13 @@ describe('expressions', () => {
     expect(finalState('RT 10 - -5').heading).toBe(15);
   });
 
+  it('tells unary from binary minus by spacing, like Logo', () => {
+    expect(finalState('SETXY -150 -87')).toMatchObject({ x: -150, y: -87 });
+    expect(finalState('RT 100-10').heading).toBe(90);
+    expect(finalState('RT 100 - 10').heading).toBe(90);
+    expect(() => run('FD 10 -5')).toThrow(/Unexpected "-" at 1:7/);
+  });
+
   it('provides SIN, COS, SQRT, ROUND and RANDOM', () => {
     expect(runToSegments('FD SIN 30 * 100')[0].y2).toBe(-50);
     expect(runToSegments('FD COS 60 * 100')[0].y2).toBe(-50);

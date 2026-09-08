@@ -184,7 +184,7 @@ class Parser {
 
   private parseAdditive(): Expr {
     let left = this.parseTerm();
-    while (this.peek().type === 'op' && (this.peek().value === '+' || this.peek().value === '-')) {
+    while (this.peek().type === 'op' && (this.peek().value === '+' || (this.peek().value === '-' && !this.peek().unary))) {
       const op = this.next();
       left = { kind: 'binary', op: op.value, left, right: this.parseTerm(), span: op.span };
     }

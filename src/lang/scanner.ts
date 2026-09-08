@@ -16,6 +16,12 @@ export interface Token {
   type: TokenType;
   value: string;
   span: Span;
+  /**
+   * Set on a "-" that is preceded by whitespace (or start/bracket) and glued
+   * to its operand, e.g. `SETXY -150 -87`. Such a minus never acts as a binary
+   * operator, which is how Logo resolves `FD 10 -5` vs `FD 10 - 5`.
+   */
+  unary?: boolean;
 }
 
 const isDigit = (c: string) => c >= '0' && c <= '9';
@@ -102,6 +108,11 @@ export function scan(source: string): Token[] {
       // two-character comparison operators
       if ((c === '<' || c === '>') && (source[i] === '=' || (c === '<' && source[i] === '>'))) i++;
       push('op', start, source.slice(start, i));
+      if (c === '-') {
+        const before = start === 0 ? ' ' : source[start - 1];
+        const after = source[i] ?? ' ';
+        if (/[\s[(]/.test(before) && /[0-9.:(A-Za-z_]/.test(after)) tokens[tokens.length - 1].unary = true;
+      }
       continue;
     }
 
