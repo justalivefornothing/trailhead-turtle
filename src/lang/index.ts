@@ -7,6 +7,7 @@ export { TurtleError, type Span } from './errors';
 export { Interpreter, DEFAULT_PALETTE, initialState } from './interpreter';
 export type { InterpreterOptions, Segment, StyledSegment, Step, TurtleState } from './interpreter';
 export { toSVG, bounds } from './svg';
+export type { Bounds, SvgOptions, SvgSegment } from './svg';
 export type { Program, Stmt, Expr } from './ast';
 
 export interface RunResult {

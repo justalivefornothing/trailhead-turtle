@@ -1,5 +1,5 @@
 import './style.css';
-import { toSVG } from './lang';
+import { bounds, toSVG, type Span } from './lang';
 import { Editor } from './ui/editor';
 import { EXAMPLES } from './ui/examples';
 import { Renderer } from './ui/renderer';
@@ -24,6 +24,9 @@ const editor = new Editor($('editor'));
 const renderer = new Renderer(canvas);
 
 let loadedSource: string | null = null;
+// The runner reports the active statement on every step; at high speed that is
+// thousands per frame, so the editor highlight is applied once per frame instead.
+let activeSpan: Span | null = null;
 
 const say = (text: string, isError = false) => {
   message.textContent = text;
@@ -38,15 +41,19 @@ const runner = new Runner(renderer, {
     empty.hidden = s !== 'idle';
     if (s === 'running') say('Running…');
     else if (s === 'paused') say('Paused — Step through it or Resume.');
-    else if (s === 'done') say(`Done: ${runner.segments.length} segments in ${runner.steps} steps.`);
-    else if (s === 'ready' || s === 'idle') say('');
+    else if (s === 'done') {
+      say(`Done: ${runner.segments.length} segments in ${runner.steps} steps.`);
+      // If the follow-cam left part of the drawing off-screen, ease out to show it all.
+      const b = bounds(runner.segments);
+      if (b && !renderer.contains(b)) fit();
+    } else if (s === 'ready' || s === 'idle') say('');
   },
   onError(err) {
     editor.setError(err.span);
     say(`${err.detail} (line ${err.span.line}, column ${err.span.col})`, true);
   },
   onActive(span) {
-    editor.setActive(span);
+    activeSpan = span;
   },
 });
 
@@ -93,7 +100,8 @@ function needsReload(): boolean {
 }
 
 function start(): void {
-  if (needsReload() && !load()) return;
+  // Run always starts over unless we are resuming a pause of the same program.
+  if ((needsReload() || runner.status !== 'paused') && !load()) return;
   runner.follow = true;
   runner.play();
 }
@@ -188,10 +196,10 @@ canvas.addEventListener(
   { passive: false },
 );
 
-const fit = () => {
+function fit(): void {
   renderer.fit(runner.segments, runner.turtle);
   runner.follow = true;
-};
+}
 
 canvas.addEventListener('dblclick', fit);
 $('fit').addEventListener('click', fit);
@@ -253,6 +261,7 @@ $('export').addEventListener('click', () => {
 let lastStatusUpdate = 0;
 function updateStatus(time: number): void {
   requestAnimationFrame(updateStatus);
+  editor.setActive(activeSpan);
   if (time - lastStatusUpdate < 100) return;
   lastStatusUpdate = time;
   const t = runner.turtle;

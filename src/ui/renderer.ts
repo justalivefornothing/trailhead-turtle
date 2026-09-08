@@ -1,4 +1,4 @@
-import { bounds, type StyledSegment, type TurtleState } from '../lang';
+import { bounds, type Bounds, type StyledSegment, type TurtleState } from '../lang';
 
 export interface View {
   /** World point shown at the centre of the canvas. */
@@ -29,6 +29,7 @@ export class Renderer {
   private dpr = 1;
   private cachedCount = 0;
   private cacheDirty = true;
+  private target: View | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -61,10 +62,41 @@ export class Renderer {
     return [(sx - this.width / 2) / zoom + cx, (sy - this.height / 2) / zoom + cy];
   }
 
+  /** Jump to a view immediately (cancels any eased transition). */
   setView(view: Partial<View>): void {
+    this.target = null;
+    this.applyView(view);
+  }
+
+  /** Ease towards a view over the next few frames. */
+  animateTo(view: View): void {
+    this.target = { ...view, zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, view.zoom)) };
+  }
+
+  private applyView(view: Partial<View>): void {
     const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, view.zoom ?? this.view.zoom));
     this.view = { cx: view.cx ?? this.view.cx, cy: view.cy ?? this.view.cy, zoom };
     this.cacheDirty = true;
+  }
+
+  private easeView(): void {
+    const t = this.target;
+    if (!t) return;
+    const v = this.view;
+    const k = 0.18;
+    const zoom = Math.exp(Math.log(v.zoom) + (Math.log(t.zoom) - Math.log(v.zoom)) * k);
+    const next = { cx: v.cx + (t.cx - v.cx) * k, cy: v.cy + (t.cy - v.cy) * k, zoom };
+    const closeEnough =
+      Math.abs(next.cx - t.cx) * t.zoom < 0.5 && Math.abs(next.cy - t.cy) * t.zoom < 0.5 && Math.abs(next.zoom / t.zoom - 1) < 0.002;
+    this.applyView(closeEnough ? t : next);
+    if (closeEnough) this.target = null;
+  }
+
+  /** Is the whole box (in world units) visible right now? */
+  contains(b: Bounds): boolean {
+    const [x0, y0] = this.worldToScreen(b.minX, b.minY);
+    const [x1, y1] = this.worldToScreen(b.maxX, b.maxY);
+    return x0 >= 0 && y0 >= 0 && x1 <= this.width && y1 <= this.height;
   }
 
   panBy(dxScreen: number, dyScreen: number): void {
@@ -86,7 +118,7 @@ export class Renderer {
   fit(segments: StyledSegment[], turtle: TurtleState | null): void {
     const b = bounds(segments) ?? (turtle ? { minX: turtle.x, minY: turtle.y, maxX: turtle.x, maxY: turtle.y } : null);
     if (!b) {
-      this.setView({ cx: 0, cy: 0, zoom: 1 });
+      this.animateTo({ cx: 0, cy: 0, zoom: 1 });
       return;
     }
     if (turtle) {
@@ -99,7 +131,7 @@ export class Renderer {
     const h = Math.max(b.maxY - b.minY, 1);
     const pad = 48;
     const zoom = Math.min((this.width - pad * 2) / w, (this.height - pad * 2) / h, 8);
-    this.setView({ cx: (b.minX + b.maxX) / 2, cy: (b.minY + b.maxY) / 2, zoom: Math.max(zoom, MIN_ZOOM) });
+    this.animateTo({ cx: (b.minX + b.maxX) / 2, cy: (b.minY + b.maxY) / 2, zoom: Math.max(zoom, MIN_ZOOM) });
   }
 
   /**
@@ -121,6 +153,7 @@ export class Renderer {
 
   draw(segments: StyledSegment[], committed: number, partial: StyledSegment | null, turtle: TurtleState | null): void {
     this.resize();
+    this.easeView();
     const { ctx, dpr } = this;
 
     this.updateTrailCache(segments, committed);

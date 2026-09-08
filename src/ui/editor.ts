@@ -30,7 +30,8 @@ export class Editor {
     });
     this.textarea.addEventListener('scroll', () => this.syncScroll());
     this.textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Tab' && !e.ctrlKey && !e.altKey) {
+      // Tab indents; Shift+Tab still moves focus so keyboard users are never trapped.
+      if (e.key === 'Tab' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         this.insert('  ');
       }
@@ -66,7 +67,7 @@ export class Editor {
 
   setActive(span: Span | null): void {
     const prev = this.highlights.find((h) => h.kind === 'active');
-    if (prev?.span === span) return;
+    if ((prev?.span ?? null) === span) return;
     this.highlights = this.highlights.filter((h) => h.kind !== 'active');
     if (span) this.highlights.push({ span, kind: 'active' });
     this.renderBackdrop();

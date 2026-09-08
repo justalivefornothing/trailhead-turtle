@@ -90,7 +90,7 @@ export class Runner {
     if (this.current) this.commit();
     else this.advance();
     if (this.current) this.commit();
-    if (this.status === 'running') this.setStatus('paused');
+    if (this.status === 'running' || this.status === 'ready') this.setStatus('paused');
   }
 
   reset(): void {
